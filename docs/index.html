@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domain Dashboard</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #search-bar {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 20px; /* Rounded corners */
+            box-sizing: border-box;
+        }
+        #results {
+            list-style-type: none;
+            padding: 0;
+        }
+        #results li {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        #results li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Domain Search</h1>
+        <input type="text" id="search-bar" placeholder="Search for domains...">
+        <ul id="results"></ul>
+    </div>
+
+    <script>
+        const searchBar = document.getElementById('search-bar');
+        const resultsList = document.getElementById('results');
+        let allDomains = [];
+
+        async function loadDomains() {
+            try {
+                // This will fetch domains.txt from the root of your GitHub Pages site
+                const response = await fetch('domains.txt');
+                if (!response.ok) {
+                    console.error('Failed to load domains.txt:', response.statusText);
+                    resultsList.innerHTML = '<li>Error loading domain list. Check console.</li>';
+                    return;
+                }
+                const textContent = await response.text();
+                // Process the comma-separated list, potentially across multiple lines
+                allDomains = textContent.split('\\n').reduce((acc, line) => {
+                    const parts = line.split(',').map(d => d.trim()).filter(d => d);
+                    return acc.concat(parts);
+                }, []);
+                console.log(`Loaded ${allDomains.length} domains.`);
+                if (allDomains.length === 0) {
+                    resultsList.innerHTML = '<li>Domain list is empty or failed to parse.</li>';
+                }
+            } catch (error) {
+                console.error('Error fetching or parsing domains.txt:', error);
+                resultsList.innerHTML = '<li>Error loading domain list. Check console.</li>';
+            }
+        }
+
+        searchBar.addEventListener('keyup', () => {
+            const query = searchBar.value.toLowerCase();
+            resultsList.innerHTML = ''; // Clear previous results
+
+            if (query.length === 0) {
+                return;
+            }
+            if (allDomains.length === 0) {
+                resultsList.innerHTML = '<li>Domain list not loaded or empty.</li>';
+                return;
+            }
+
+            const filteredDomains = allDomains.filter(domain => domain.toLowerCase().includes(query));
+            const top5 = filteredDomains.slice(0, 5);
+
+            if (top5.length === 0) {
+                resultsList.innerHTML = '<li>No domains found.</li>';
+            } else {
+                top5.forEach(domain => {
+                    const li = document.createElement('li');
+                    li.textContent = domain;
+                    resultsList.appendChild(li);
+                });
+            }
+        });
+
+        // Load domains when the page loads
+        loadDomains();
+    </script>
+</body>
+</html>
